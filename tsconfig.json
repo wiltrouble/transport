@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/.next",
+    "**/dist"
+  ],
+  "extends": "expo/tsconfig.base"
+}

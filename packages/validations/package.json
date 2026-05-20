@@ -1,0 +1,18 @@
+{
+  "name": "@school/validations",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@school/types": "*",
+    "@school/utils": "*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

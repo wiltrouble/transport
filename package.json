@@ -1,0 +1,27 @@
+{
+  "name": "school-transport",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/mobile-app/school-transport",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "web": "npm run dev --workspace=@school/web",
+    "mobile": "npm --prefix apps/mobile-app/school-transport run start",
+    "mobile:clear": "npm --prefix apps/mobile-app/school-transport run start -- -c"
+  },
+  "devDependencies": {
+    "expo": "~55.0.24",
+    "expo-router": "~55.0.14",
+    "turbo": "^2.5.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.9.2"
+}
