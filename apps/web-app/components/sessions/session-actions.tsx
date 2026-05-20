@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import {
   cancelTransportSessionAction,
   completeTransportSessionAction,
-  startTransportSessionAction,
 } from "@/app/actions/transport-sessions";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -19,22 +18,20 @@ type SessionActionsProps = {
   manageHref?: string;
 };
 
+/**
+ * Lifecycle controls for an existing session. The "start" action is gone —
+ * sessions are created in the `active` state from the vehicle operational
+ * dashboard, so this component only handles the `active → completed/cancelled`
+ * transitions plus a shortcut to the manage view.
+ *
+ * Legacy `pending` rows from the old workflow are surfaced with a notice that
+ * routes the operator back to the dashboard to start a new session for the
+ * vehicle instead.
+ */
 export function SessionActions({ sessionId, status, manageHref }: SessionActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState<"complete" | "cancel" | null>(null);
-
-  async function handleStart() {
-    setLoading(true);
-    const res = await startTransportSessionAction(sessionId);
-    setLoading(false);
-    if (!res.ok) {
-      toast.error(res.error);
-      return;
-    }
-    toast.success("Sesión iniciada");
-    router.refresh();
-  }
 
   async function handleConfirm() {
     if (!confirm) return;
@@ -56,9 +53,12 @@ export function SessionActions({ sessionId, status, manageHref }: SessionActions
   return (
     <>
       {status === "pending" ? (
-        <Button type="button" disabled={loading} onClick={() => void handleStart()}>
-          Iniciar sesión
-        </Button>
+        <Link
+          href="/dashboard/sessions"
+          className="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100"
+        >
+          Sesión heredada — iniciar desde el vehículo
+        </Link>
       ) : null}
       {status === "active" ? (
         <>

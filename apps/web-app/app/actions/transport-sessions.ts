@@ -1,16 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedUser } from "@/lib/auth";
-import {
-  createTransportSessionSchema,
-  type CreateTransportSessionValues,
-} from "@school/validations";
+import { requireAdmin } from "@/lib/authorization";
 import { transportSessionService } from "@/services/transportSessionService";
 
 function revalidateSessions(sessionId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/sessions");
+  revalidatePath("/dashboard/sessions/history");
   revalidatePath("/dashboard/driver/session");
   if (sessionId) {
     revalidatePath(`/dashboard/sessions/${sessionId}`);
@@ -18,16 +15,19 @@ function revalidateSessions(sessionId?: string) {
   }
 }
 
-export async function createTransportSessionAction(values: CreateTransportSessionValues) {
-  const parsed = createTransportSessionSchema.safeParse(values);
-  if (!parsed.success) {
-    return { ok: false as const, error: parsed.error.flatten().fieldErrors };
+/**
+ * Start a session for a specific vehicle. Driver, students and shift are
+ * inherited from the vehicle's operational state — no manual selection allowed.
+ */
+export async function startVehicleSessionAction(vehicleId: string) {
+  if (!vehicleId || typeof vehicleId !== "string") {
+    return { ok: false as const, error: "Vehículo requerido" };
   }
   try {
-    const user = await getAuthenticatedUser();
-    const session = await transportSessionService.createSession(
-      parsed.data,
-      user?.email ?? "",
+    const { user } = await requireAdmin();
+    const session = await transportSessionService.startVehicleSession(
+      vehicleId,
+      user.email ?? "",
     );
     revalidateSessions(session.id);
     return { ok: true as const, id: session.id };
@@ -36,21 +36,10 @@ export async function createTransportSessionAction(values: CreateTransportSessio
   }
 }
 
-export async function startTransportSessionAction(sessionId: string) {
-  try {
-    const user = await getAuthenticatedUser();
-    await transportSessionService.startSession(sessionId, user?.email ?? "");
-    revalidateSessions(sessionId);
-    return { ok: true as const };
-  } catch (e) {
-    return { ok: false as const, error: (e as Error).message };
-  }
-}
-
 export async function completeTransportSessionAction(sessionId: string) {
   try {
-    const user = await getAuthenticatedUser();
-    await transportSessionService.completeSession(sessionId, user?.email ?? "");
+    const { user } = await requireAdmin();
+    await transportSessionService.completeSession(sessionId, user.email ?? "");
     revalidateSessions(sessionId);
     return { ok: true as const };
   } catch (e) {
@@ -60,6 +49,7 @@ export async function completeTransportSessionAction(sessionId: string) {
 
 export async function cancelTransportSessionAction(sessionId: string) {
   try {
+    await requireAdmin();
     await transportSessionService.cancelSession(sessionId);
     revalidateSessions(sessionId);
     return { ok: true as const };

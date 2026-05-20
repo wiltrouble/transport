@@ -1,53 +1,55 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { SessionsTable } from "@/components/sessions/sessions-table";
+import { OperationalDashboard } from "@/components/sessions/operational-dashboard";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DEFAULT_PAGE_SIZE } from "@school/utils";
-import type { TransportSessionStatus } from "@school/utils";
 import { transportSessionService } from "@/services/transportSessionService";
 
-type SearchParams = Promise<{ page?: string; search?: string; status?: string }>;
+export const dynamic = "force-dynamic";
 
-function TableSkeleton() {
+function DashboardSkeleton() {
   return (
-    <div className="space-y-3">
-      <Skeleton className="h-10 w-full max-w-sm" />
-      <Skeleton className="h-64 w-full" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full" />
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-56 w-full" />
+        ))}
+      </div>
     </div>
   );
 }
 
-async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
-  const sp = await searchParams;
-  const status = sp.status as TransportSessionStatus | undefined;
-  const result = await transportSessionService.list({
-    page: Number(sp.page) || 1,
-    pageSize: DEFAULT_PAGE_SIZE,
-    search: sp.search,
-    sessionStatus: status && status.length > 0 ? status : undefined,
-  });
-  return <SessionsTable result={result} />;
+async function OperationalContent() {
+  const vehicles = await transportSessionService.getOperationalVehicles();
+  return <OperationalDashboard vehicles={vehicles} />;
 }
 
-export default function SessionsPage({ searchParams }: { searchParams: SearchParams }) {
+export default function SessionsPage() {
   return (
     <>
       <PageHeader
-        title="Sesiones de transporte"
-        description="Viajes operativos, asistencia y historial"
-        breadcrumbs={[{ label: "Inicio", href: "/dashboard" }, { label: "Sesiones" }]}
+        title="Operación de transporte"
+        description="Inicia y supervisa sesiones desde cada vehículo asignado"
+        breadcrumbs={[
+          { label: "Inicio", href: "/dashboard" },
+          { label: "Sesiones" },
+        ]}
         actions={
           <Link
-            href="/dashboard/sessions/create"
-            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
+            href="/dashboard/sessions/history"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
           >
-            Nueva sesión
+            Ver historial
           </Link>
         }
       />
-      <Suspense fallback={<TableSkeleton />}>
-        <SessionsList searchParams={searchParams} />
+      <Suspense fallback={<DashboardSkeleton />}>
+        <OperationalContent />
       </Suspense>
     </>
   );

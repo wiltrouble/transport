@@ -1,6 +1,7 @@
 export * from "./common";
 export * from "./driver";
 export * from "./notification";
+export * from "./operational-vehicle";
 export * from "./parent";
 export * from "./parent-mobile";
 export * from "./push-token";

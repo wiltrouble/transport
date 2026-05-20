@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { StartSessionButton } from "@/components/sessions/start-session-button";
 import { AssignmentStatusBadge } from "@/components/vehicle-drivers/assignment-status-badge";
 import { VehicleDriverAssignmentsList } from "@/components/vehicle-drivers/vehicle-driver-assignments-list";
 import { DataTable } from "@/components/shared/data-table";
@@ -20,8 +21,10 @@ export default async function VehicleDetailPage({ params }: Props) {
   const vehicle = await vehicleService.getByIdWithDetails(id);
   if (!vehicle) notFound();
 
-  const activeSession = await transportSessionService.getActiveSessionForVehicle(id);
+  const op = await transportSessionService.getVehicleOperationalStatus(id);
+  const activeSession = op.activeSession;
   const current = vehicle.currentDriverAssignment;
+  const canStartSession = op.operationalStatus === "ready";
 
   return (
     <>
@@ -34,12 +37,23 @@ export default async function VehicleDetailPage({ params }: Props) {
           { label: vehicle.plate },
         ]}
         actions={
-          <Link
-            href={`/dashboard/vehicles/${id}/edit`}
-            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-          >
-            Editar vehículo y asignaciones
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {canStartSession ? <StartSessionButton vehicleId={id} /> : null}
+            {activeSession ? (
+              <Link
+                href={`/dashboard/sessions/${activeSession.id}/manage`}
+                className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
+              >
+                Gestionar sesión activa
+              </Link>
+            ) : null}
+            <Link
+              href={`/dashboard/vehicles/${id}/edit`}
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+            >
+              Editar vehículo y asignaciones
+            </Link>
+          </div>
         }
       />
 

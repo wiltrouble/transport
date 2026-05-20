@@ -11,7 +11,7 @@ const nav = [
   { href: "/dashboard/students", label: "Estudiantes", icon: GraduationCap },
   { href: "/dashboard/drivers", label: "Conductores", icon: Users },
   { href: "/dashboard/vehicles", label: "Vehículos", icon: Car },
-  { href: "/dashboard/sessions", label: "Sesiones", icon: Route },
+  { href: "/dashboard/sessions", label: "Operación", icon: Route },
   { href: "/dashboard/live-map", label: "Mapa en vivo", icon: MapPin },
 ];
 

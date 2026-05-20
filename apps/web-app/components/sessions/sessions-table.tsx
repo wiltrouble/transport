@@ -25,7 +25,7 @@ export function SessionsTable({
     if (value) p.set(key, value);
     else p.delete(key);
     p.delete("page");
-    router.push(`/dashboard/sessions?${p.toString()}`);
+    router.push(`/dashboard/sessions/history?${p.toString()}`);
   }
 
   return (
@@ -128,7 +128,7 @@ export function SessionsTable({
             onClick={() => {
               const p = new URLSearchParams(searchParams.toString());
               p.set("page", String(result.page - 1));
-              router.push(`/dashboard/sessions?${p}`);
+              router.push(`/dashboard/sessions/history?${p}`);
             }}
           >
             Anterior
@@ -139,7 +139,7 @@ export function SessionsTable({
             onClick={() => {
               const p = new URLSearchParams(searchParams.toString());
               p.set("page", String(result.page + 1));
-              router.push(`/dashboard/sessions?${p}`);
+              router.push(`/dashboard/sessions/history?${p}`);
             }}
           >
             Siguiente

@@ -64,8 +64,8 @@ export default function DashboardPage() {
           <Card className="flex items-center gap-4 transition hover:shadow-md">
             <Route className="size-10 text-indigo-600" aria-hidden />
             <div>
-              <h2 className="font-semibold text-slate-900">Sesiones</h2>
-              <p className="text-sm text-slate-500">Viajes y asistencia</p>
+              <h2 className="font-semibold text-slate-900">Operación</h2>
+              <p className="text-sm text-slate-500">Inicia sesiones por vehículo</p>
             </div>
           </Card>
         </Link>

@@ -1,15 +1,15 @@
 import { z } from "zod";
-import { SESSION_SHIFTS } from "@school/types";
 
-export const createTransportSessionSchema = z.object({
-  vehicleId: z.string().min(1, "Seleccione un vehículo"),
-  driverId: z.string().min(1, "Seleccione un conductor"),
-  sessionDate: z.string().min(1, "Indique la fecha de la sesión"),
-  shift: z.enum(SESSION_SHIFTS, { message: "Seleccione un turno" }),
-  notes: z.string().optional(),
+/**
+ * Sessions are no longer manually created with a vehicle+driver dropdown.
+ * The only entry point is `startVehicleSession(vehicleId)` — driver, students
+ * and shift are inherited from the vehicle's operational state.
+ */
+export const startVehicleSessionSchema = z.object({
+  vehicleId: z.string().min(1, "Vehículo requerido"),
 });
 
-export type CreateTransportSessionValues = z.infer<typeof createTransportSessionSchema>;
+export type StartVehicleSessionValues = z.infer<typeof startVehicleSessionSchema>;
 
 export const sessionStudentNotesSchema = z.object({
   notes: z.string().max(2000, "Notas demasiado largas"),

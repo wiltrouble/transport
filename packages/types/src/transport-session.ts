@@ -19,14 +19,6 @@ export type TransportSession = {
   driver: Driver | null;
 };
 
-export type TransportSessionInput = {
-  vehicleId: string;
-  driverId: string;
-  sessionDate: string;
-  shift: SessionShift | string;
-  notes?: string;
-};
-
 export type TransportSessionListItem = TransportSession & {
   studentCount: number;
 };
