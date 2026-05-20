@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   assignStudentToVehicleAction,
@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   SearchableEntitySelect,
   type SearchableOption,
-} from "@/components/vehicle-drivers/searchable-entity-select";
+} from "@/components/shared/searchable-entity-select";
 import { StudentAssignmentStatusBadge } from "@/components/vehicle-students/student-assignment-status-badge";
 import { VehicleStudentAssignmentsList } from "@/components/vehicle-students/vehicle-student-assignments-list";
 import { Button } from "@/components/ui/button";
@@ -48,11 +48,14 @@ function OccupancyBar({ percent }: { percent: number }) {
 
 export function VehicleStudentsManager({ vehicle, studentOptions }: Props) {
   const router = useRouter();
+  // Sync local optimistic state with the prop without an effect — see
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [assignments, setAssignments] = useState(vehicle.assignments);
-
-  useEffect(() => {
+  const [lastSyncedAssignments, setLastSyncedAssignments] = useState(vehicle.assignments);
+  if (vehicle.assignments !== lastSyncedAssignments) {
+    setLastSyncedAssignments(vehicle.assignments);
     setAssignments(vehicle.assignments);
-  }, [vehicle.assignments]);
+  }
 
   const [studentId, setStudentId] = useState("");
   const [loading, setLoading] = useState(false);

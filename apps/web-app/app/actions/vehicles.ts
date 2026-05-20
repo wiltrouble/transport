@@ -1,36 +1,42 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { vehicleFormSchema, type VehicleFormValues } from "@school/validations";
+import {
+  vehicleCreateSchema,
+  vehicleEditSchema,
+  type VehicleCreateValues,
+  type VehicleEditValues,
+} from "@school/validations";
 import { vehicleService } from "@/services/vehicleService";
 
 function revalidateVehicles(vehicleId?: string, driverId?: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/vehicles");
-  revalidatePath("/dashboard/vehicle-drivers");
   revalidatePath("/dashboard/drivers");
   if (vehicleId) {
     revalidatePath(`/dashboard/vehicles/${vehicleId}`);
-    revalidatePath(`/dashboard/vehicles/${vehicleId}/students`);
-    revalidatePath(`/dashboard/vehicles/${vehicleId}/drivers`);
     revalidatePath(`/dashboard/vehicles/${vehicleId}/edit`);
   }
   if (driverId) {
     revalidatePath(`/dashboard/drivers/${driverId}`);
-    revalidatePath(`/dashboard/drivers/${driverId}/vehicles`);
   }
 }
 
-export async function createVehicleAction(values: VehicleFormValues) {
-  const parsed = vehicleFormSchema.safeParse(values);
+/**
+ * Create a vehicle + driver + (optional) student assignments in a single
+ * transactional flow. Used by `/dashboard/vehicles/create` (wizard).
+ */
+export async function createVehicleWithAssignmentsAction(values: VehicleCreateValues) {
+  const parsed = vehicleCreateSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors };
   }
   try {
-    const { driverId, ...vehicleInput } = parsed.data;
-    const { vehicle } = await vehicleService.createWithDriver(vehicleInput, driverId);
+    const { driverId, students, ...info } = parsed.data;
+    const { vehicle, assignedStudents } =
+      await vehicleService.createVehicleWithAssignments(info, driverId, students);
     revalidateVehicles(vehicle.id, driverId);
-    return { ok: true as const, id: vehicle.id };
+    return { ok: true as const, id: vehicle.id, assignedStudents };
   } catch (e) {
     return {
       ok: false as const,
@@ -39,14 +45,21 @@ export async function createVehicleAction(values: VehicleFormValues) {
   }
 }
 
-export async function updateVehicleAction(id: string, values: VehicleFormValues) {
-  const parsed = vehicleFormSchema.safeParse(values);
+/**
+ * Update vehicle info and replace the active driver if needed.
+ * Student operations are handled by `vehicle-students` actions (inline UI).
+ */
+export async function updateVehicleAssignmentsAction(
+  id: string,
+  values: VehicleEditValues,
+) {
+  const parsed = vehicleEditSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors };
   }
   try {
-    const { driverId, ...vehicleInput } = parsed.data;
-    await vehicleService.updateWithDriver(id, vehicleInput, driverId);
+    const { driverId, ...info } = parsed.data;
+    await vehicleService.updateVehicleAssignments(id, info, driverId);
     revalidateVehicles(id, driverId);
     return { ok: true as const };
   } catch (e) {
@@ -55,6 +68,16 @@ export async function updateVehicleAction(id: string, values: VehicleFormValues)
       error: { _form: [(e as Error).message || "Error al actualizar"] },
     };
   }
+}
+
+/** @deprecated Use createVehicleWithAssignmentsAction */
+export async function createVehicleAction(values: VehicleCreateValues) {
+  return createVehicleWithAssignmentsAction(values);
+}
+
+/** @deprecated Use updateVehicleAssignmentsAction */
+export async function updateVehicleAction(id: string, values: VehicleEditValues) {
+  return updateVehicleAssignmentsAction(id, values);
 }
 
 export async function deleteVehicleAction(id: string) {

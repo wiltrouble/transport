@@ -1,26 +1,13 @@
 import { z } from "zod";
 
-export const assignVehicleDriverSchema = z.object({
-  vehicleId: z.string().min(1, "Seleccione un vehículo"),
+/**
+ * Driver-replacement is the only assignment operation exposed to the UI
+ * after the standalone Assignments module was removed; all other
+ * vehicle_drivers row mutations happen inside the vehicle service.
+ */
+export const replaceVehicleDriverSchema = z.object({
+  vehicleId: z.string().min(1, "Vehículo requerido"),
   driverId: z.string().min(1, "Seleccione un conductor"),
-  assignedAt: z.string().min(1, "Indique la fecha de asignación"),
-  isPrimary: z.boolean(),
-  status: z.boolean(),
 });
 
-export type AssignVehicleDriverValues = z.infer<typeof assignVehicleDriverSchema>;
-
-export const setPrimaryVehicleDriverSchema = z.object({
-  assignmentId: z.string().min(1),
-  vehicleId: z.string().min(1),
-});
-
-export type SetPrimaryVehicleDriverValues = z.infer<typeof setPrimaryVehicleDriverSchema>;
-
-export const unassignVehicleDriverSchema = z.object({
-  assignmentId: z.string().min(1),
-  vehicleId: z.string().min(1),
-  driverId: z.string().min(1),
-});
-
-export type UnassignVehicleDriverValues = z.infer<typeof unassignVehicleDriverSchema>;
+export type ReplaceVehicleDriverValues = z.infer<typeof replaceVehicleDriverSchema>;

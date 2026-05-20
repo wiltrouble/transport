@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Bus, Car, GraduationCap, Route, Users } from "lucide-react";
+import { Car, GraduationCap, MapPin, Route, Users } from "lucide-react";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
@@ -69,12 +69,12 @@ export default function DashboardPage() {
             </div>
           </Card>
         </Link>
-        <Link href="/dashboard/driver/session">
+        <Link href="/dashboard/live-map">
           <Card className="flex items-center gap-4 transition hover:shadow-md">
-            <Bus className="size-10 text-indigo-600" aria-hidden />
+            <MapPin className="size-10 text-indigo-600" aria-hidden />
             <div>
-              <h2 className="font-semibold text-slate-900">Operación conductor</h2>
-              <p className="text-sm text-slate-500">Iniciar viaje y marcar asistencia</p>
+              <h2 className="font-semibold text-slate-900">Mapa en vivo</h2>
+              <p className="text-sm text-slate-500">Seguimiento GPS en tiempo real</p>
             </div>
           </Card>
         </Link>

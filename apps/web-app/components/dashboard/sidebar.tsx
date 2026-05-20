@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bus, Car, GraduationCap, LayoutDashboard, Link2, MapPin, Route, Users } from "lucide-react";
+import { Car, GraduationCap, LayoutDashboard, MapPin, Route, Users } from "lucide-react";
 import { cn } from "@school/utils";
 
 const nav = [
@@ -11,10 +11,8 @@ const nav = [
   { href: "/dashboard/students", label: "Estudiantes", icon: GraduationCap },
   { href: "/dashboard/drivers", label: "Conductores", icon: Users },
   { href: "/dashboard/vehicles", label: "Vehículos", icon: Car },
-  { href: "/dashboard/vehicle-drivers", label: "Asignaciones", icon: Link2 },
   { href: "/dashboard/sessions", label: "Sesiones", icon: Route },
   { href: "/dashboard/live-map", label: "Mapa en vivo", icon: MapPin },
-  { href: "/dashboard/driver/session", label: "Operación conductor", icon: Bus },
 ];
 
 export function DashboardSidebar() {

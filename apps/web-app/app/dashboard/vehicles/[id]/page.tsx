@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { VehicleDriverAssignmentsList } from "@/components/vehicle-drivers/vehicle-driver-assignments-list";
 import { AssignmentStatusBadge } from "@/components/vehicle-drivers/assignment-status-badge";
+import { VehicleDriverAssignmentsList } from "@/components/vehicle-drivers/vehicle-driver-assignments-list";
+import { DataTable } from "@/components/shared/data-table";
+import { OccupancyBar } from "@/components/shared/occupancy-bar";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { StudentAssignmentStatusBadge } from "@/components/vehicle-students/student-assignment-status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { DataTable } from "@/components/shared/data-table";
 import { formatDateTime } from "@school/utils";
+import { transportSessionService } from "@/services/transportSessionService";
 import { vehicleService } from "@/services/vehicleService";
 
 type Props = { params: Promise<{ id: string }> };
@@ -17,42 +20,30 @@ export default async function VehicleDetailPage({ params }: Props) {
   const vehicle = await vehicleService.getByIdWithDetails(id);
   if (!vehicle) notFound();
 
+  const activeSession = await transportSessionService.getActiveSessionForVehicle(id);
   const current = vehicle.currentDriverAssignment;
 
   return (
     <>
       <PageHeader
         title={vehicle.plate}
+        description={`${vehicle.brand} ${vehicle.model} (${vehicle.year})`}
         breadcrumbs={[
           { label: "Inicio", href: "/dashboard" },
           { label: "Vehículos", href: "/dashboard/vehicles" },
           { label: vehicle.plate },
         ]}
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/dashboard/vehicles/${id}/students`}
-              className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-            >
-              Gestionar estudiantes
-            </Link>
-            <Link
-              href={`/dashboard/vehicles/${id}/edit`}
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50"
-            >
-              Editar vehículo
-            </Link>
-          </div>
+          <Link
+            href={`/dashboard/vehicles/${id}/edit`}
+            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
+          >
+            Editar vehículo y asignaciones
+          </Link>
         }
       />
 
-      <Card className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <p className="text-xs font-medium uppercase text-slate-500">Vehículo</p>
-          <p className="mt-1 font-medium text-slate-900">
-            {vehicle.brand} {vehicle.model} ({vehicle.year})
-          </p>
-        </div>
+      <Card className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <p className="text-xs font-medium uppercase text-slate-500">Capacidad</p>
           <p className="mt-1 text-slate-900">{vehicle.capacity} asientos</p>
@@ -62,6 +53,11 @@ export default async function VehicleDetailPage({ params }: Props) {
           <p className="mt-1 text-slate-900">
             {vehicle.assignmentCount}/{vehicle.capacity} ({vehicle.occupancyPercent}%)
           </p>
+          <OccupancyBar percent={vehicle.occupancyPercent} className="mt-2" />
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase text-slate-500">Color</p>
+          <p className="mt-1 text-slate-900">{vehicle.color}</p>
         </div>
         <div>
           <p className="text-xs font-medium uppercase text-slate-500">Estado</p>
@@ -69,9 +65,20 @@ export default async function VehicleDetailPage({ params }: Props) {
             <StatusBadge status={vehicle.status} />
           </div>
         </div>
-        <div className="sm:col-span-2">
-          <p className="text-xs font-medium uppercase text-slate-500">Color</p>
-          <p className="mt-1 text-slate-900">{vehicle.color}</p>
+        <div>
+          <p className="text-xs font-medium uppercase text-slate-500">Sesión activa</p>
+          <div className="mt-1">
+            {activeSession ? (
+              <Link
+                href={`/dashboard/sessions/${activeSession.id}`}
+                className="inline-flex items-center"
+              >
+                <Badge variant="success">En curso</Badge>
+              </Link>
+            ) : (
+              <Badge variant="default">Sin sesión</Badge>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -110,22 +117,12 @@ export default async function VehicleDetailPage({ params }: Props) {
               href={`/dashboard/vehicles/${id}/edit`}
               className="font-medium text-indigo-600 hover:underline"
             >
-              Asigne uno en edición
+              Asigne uno desde editar vehículo
             </Link>
             .
           </p>
         )}
       </Card>
-
-      <h2 className="mb-3 text-lg font-semibold text-slate-900">Historial de conductores</h2>
-      <div className="mb-10">
-        <VehicleDriverAssignmentsList
-          assignments={vehicle.driverAssignmentHistory}
-          showDriver
-          emptyTitle="Sin historial de conductores"
-          emptyDescription="Las asignaciones aparecerán aquí al crear o reemplazar conductores."
-        />
-      </div>
 
       <h2 className="mb-3 text-lg font-semibold text-slate-900">Estudiantes en ruta</h2>
       <DataTable
@@ -144,6 +141,16 @@ export default async function VehicleDetailPage({ params }: Props) {
         data={vehicle.assignments}
         keyExtractor={(r) => r.id}
         emptyMessage="Sin estudiantes asignados"
+      />
+
+      <h2 className="mb-3 mt-10 text-lg font-semibold text-slate-900">
+        Historial de conductores
+      </h2>
+      <VehicleDriverAssignmentsList
+        assignments={vehicle.driverAssignmentHistory}
+        showDriver
+        emptyTitle="Sin historial de conductores"
+        emptyDescription="Las asignaciones aparecerán aquí al crear o reemplazar conductores."
       />
     </>
   );

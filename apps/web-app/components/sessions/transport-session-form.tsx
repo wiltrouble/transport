@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { createTransportSessionAction } from "@/app/actions/transport-sessions";
 import { FormField } from "@/components/shared/form-field";
-import { SearchableEntitySelect } from "@/components/vehicle-drivers/searchable-entity-select";
+import { SearchableEntitySelect } from "@/components/shared/searchable-entity-select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";

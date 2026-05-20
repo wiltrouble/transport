@@ -5,6 +5,7 @@ import { type AppwriteRow } from "@/lib/row-utils";
 import { getTablesConfig } from "@/lib/tables-config";
 import type { ListParams, PaginatedResult } from "@school/types";
 import type {
+  AssignStudentToVehicleInput,
   Vehicle,
   VehicleInput,
   VehicleListItem,
@@ -12,6 +13,19 @@ import type {
 } from "@school/types";
 import { vehicleDriverService } from "@/services/vehicleDriverService";
 import { vehicleStudentService } from "@/services/vehicleStudentService";
+
+export type VehicleWizardStudentInput = {
+  studentId: string;
+  pickupOrder?: number;
+  pickupTime?: string;
+  dropoffTime?: string;
+};
+
+export type VehicleAssignmentUpdate = {
+  add?: VehicleWizardStudentInput[];
+  remove?: string[];
+  reorder?: string[];
+};
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -166,6 +180,46 @@ export const vehicleService = {
     }
   },
 
+  /**
+   * Single transactional workflow used by the create wizard:
+   * 1) insert vehicle row, 2) assign driver, 3) assign students (in pickup order).
+   * Any failure rolls back the vehicle row so the system never ends up with
+   * a vehicle missing its mandatory driver.
+   */
+  async createVehicleWithAssignments(
+    input: VehicleInput,
+    driverId: string,
+    students: VehicleWizardStudentInput[] = [],
+  ): Promise<{ vehicle: Vehicle; assignedStudents: number }> {
+    if (students.length > input.capacity) {
+      throw new Error(
+        `Estudiantes (${students.length}) supera capacidad (${input.capacity}).`,
+      );
+    }
+
+    const ordered = [...students].sort(
+      (a, b) => (a.pickupOrder ?? Number.MAX_SAFE_INTEGER) - (b.pickupOrder ?? Number.MAX_SAFE_INTEGER),
+    );
+
+    const { vehicle } = await this.createWithDriver(input, driverId);
+
+    try {
+      for (const s of ordered) {
+        const payload: AssignStudentToVehicleInput = {
+          vehicleId: vehicle.id,
+          studentId: s.studentId,
+          pickupTime: s.pickupTime,
+          dropoffTime: s.dropoffTime,
+        };
+        await vehicleStudentService.assignStudentToVehicle(payload);
+      }
+      return { vehicle, assignedStudents: ordered.length };
+    } catch (error) {
+      await this.delete(vehicle.id).catch(() => undefined);
+      throw error;
+    }
+  },
+
   async update(id: string, input: VehicleInput): Promise<Vehicle> {
     const tablesDB = await getServerTablesDB();
     const { databaseId, vehiclesTableId } = getTablesConfig();
@@ -189,6 +243,39 @@ export const vehicleService = {
     if (current?.driverId !== driverId) {
       await vehicleDriverService.replaceVehicleDriver(id, driverId);
     }
+    return vehicle;
+  },
+
+  /**
+   * Update vehicle info + driver and apply student operations in one call.
+   * Failures during student ops do not roll back the vehicle/driver update
+   * because those have already been persisted as historical truth.
+   */
+  async updateVehicleAssignments(
+    id: string,
+    input: VehicleInput,
+    driverId: string,
+    studentOps: VehicleAssignmentUpdate = {},
+  ): Promise<Vehicle> {
+    const vehicle = await this.updateWithDriver(id, input, driverId);
+
+    for (const aid of studentOps.remove ?? []) {
+      await vehicleStudentService.unassignStudent(aid);
+    }
+
+    for (const s of studentOps.add ?? []) {
+      await vehicleStudentService.assignStudentToVehicle({
+        vehicleId: id,
+        studentId: s.studentId,
+        pickupTime: s.pickupTime,
+        dropoffTime: s.dropoffTime,
+      });
+    }
+
+    if (studentOps.reorder?.length) {
+      await vehicleStudentService.reorderStudents(id, studentOps.reorder);
+    }
+
     return vehicle;
   },
 

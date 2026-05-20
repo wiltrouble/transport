@@ -1,26 +1,28 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
-import { VehicleForm } from "@/components/vehicles/vehicle-form";
+import { VehicleEditPanels } from "@/components/vehicles/vehicle-edit-panels";
 import { vehicleDriverService } from "@/services/vehicleDriverService";
 import { vehicleService } from "@/services/vehicleService";
+import { vehicleStudentService } from "@/services/vehicleStudentService";
 
 type Props = { params: Promise<{ id: string }> };
 
 export default async function EditVehiclePage({ params }: Props) {
   const { id } = await params;
-  const vehicle = await vehicleService.getById(id);
+  const vehicle = await vehicleService.getByIdWithDetails(id);
   if (!vehicle) notFound();
 
-  const current = await vehicleDriverService.getCurrentVehicleDriver(id);
-  const driverOptions = await vehicleDriverService.getDriverSelectOptions({
-    includeDriverId: current?.driverId,
-  });
+  const currentDriverId = vehicle.currentDriverAssignment?.driverId;
+  const [driverOptions, studentOptions] = await Promise.all([
+    vehicleDriverService.getDriverSelectOptions({ includeDriverId: currentDriverId }),
+    vehicleStudentService.getStudentSelectOptions({ vehicleId: id }),
+  ]);
 
   return (
     <>
       <PageHeader
         title={`Editar — ${vehicle.plate}`}
-        description="Puede reemplazar el conductor; el historial de asignaciones se conserva."
+        description="Información, conductor y estudiantes en una sola pantalla. El historial se conserva."
         breadcrumbs={[
           { label: "Inicio", href: "/dashboard" },
           { label: "Vehículos", href: "/dashboard/vehicles" },
@@ -28,11 +30,11 @@ export default async function EditVehiclePage({ params }: Props) {
           { label: "Editar" },
         ]}
       />
-      <VehicleForm
-        mode="edit"
+      <VehicleEditPanels
         vehicle={vehicle}
         driverOptions={driverOptions}
-        initialDriverId={current?.driverId ?? ""}
+        studentOptions={studentOptions}
+        initialDriverId={currentDriverId ?? ""}
       />
     </>
   );

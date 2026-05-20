@@ -11,7 +11,6 @@ import {
   VEHICLE_DRIVER_DRIVER_COL,
   VEHICLE_DRIVER_VEHICLE_COL,
 } from "@/lib/vehicle-drivers-relations";
-import type { ListParams, PaginatedResult } from "@school/types";
 import type { Driver } from "@school/types";
 import type { Vehicle } from "@school/types";
 import type {
@@ -20,7 +19,6 @@ import type {
 } from "@school/types";
 import { isActiveVehicleDriverAssignment } from "@school/types";
 
-const DEFAULT_PAGE_SIZE = 10;
 const JUNCTION_FETCH_LIMIT = 500;
 
 function mapAssignment(row: AppwriteRow): VehicleDriverAssignment {
@@ -207,53 +205,6 @@ async function assertDriverAvailableForAssignment(
 }
 
 export const vehicleDriverService = {
-  async list(
-    params: ListParams & { activeOnly?: boolean; inactiveOnly?: boolean } = {},
-  ): Promise<PaginatedResult<VehicleDriverAssignment>> {
-    const page = Math.max(1, params.page ?? 1);
-    const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
-
-    const rows = await listJunctionRows([Query.limit(JUNCTION_FETCH_LIMIT)]);
-    let assignments = sortByAssignedDesc(await enrichAssignments(rows.map(mapAssignment)));
-
-    if (params.activeOnly) {
-      assignments = assignments.filter(isActiveVehicleDriverAssignment);
-    }
-    if (params.inactiveOnly) {
-      assignments = assignments.filter((a) => !isActiveVehicleDriverAssignment(a));
-    }
-
-    if (typeof params.status === "boolean") {
-      assignments = assignments.filter((a) => a.status === params.status);
-    }
-
-    const search = params.search?.trim().toLowerCase();
-    if (search) {
-      assignments = assignments.filter((a) => {
-        const plate = a.vehicle?.plate?.toLowerCase() ?? "";
-        const driver = a.driver?.fullName?.toLowerCase() ?? "";
-        const license = a.driver?.licenseNumber?.toLowerCase() ?? "";
-        return (
-          plate.includes(search) ||
-          driver.includes(search) ||
-          license.includes(search)
-        );
-      });
-    }
-
-    const total = assignments.length;
-    const start = (page - 1) * pageSize;
-    const items = assignments.slice(start, start + pageSize);
-
-    return {
-      items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
-    };
-  },
-
   async getVehicleDrivers(
     vehicleId: string,
     options: { activeOnly?: boolean } = {},
@@ -299,11 +250,6 @@ export const vehicleDriverService = {
     driverId: string,
   ): Promise<VehicleDriverAssignment | null> {
     return this.getActiveAssignmentForDriver(driverId);
-  },
-
-  /** @deprecated Use getCurrentVehicleDriver */
-  async getPrimaryDriver(vehicleId: string): Promise<VehicleDriverAssignment | null> {
-    return this.getCurrentVehicleDriver(vehicleId);
   },
 
   /**
@@ -427,17 +373,6 @@ export const vehicleDriverService = {
       isPrimary: true,
       status: true,
     });
-  },
-
-  async setPrimaryDriver(assignmentId: string): Promise<VehicleDriverAssignment> {
-    const assignment = await getAssignmentById(assignmentId);
-    if (!assignment) {
-      throw new Error("Asignación no encontrada.");
-    }
-    if (!isActiveVehicleDriverAssignment(assignment)) {
-      throw new Error("Solo asignaciones activas pueden ser el conductor del vehículo.");
-    }
-    return assignment;
   },
 
   async unassignDriver(assignmentId: string): Promise<VehicleDriverAssignment> {

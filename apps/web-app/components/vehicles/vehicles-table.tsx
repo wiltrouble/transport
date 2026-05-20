@@ -86,8 +86,8 @@ export function VehiclesTable({ result }: { result: PaginatedResult<VehicleListI
             className: "text-right",
             cell: (r) => (
               <div className="flex justify-end gap-2">
-                <Link href={`/dashboard/vehicles/${r.id}/students`} className="text-sm text-slate-600 hover:text-indigo-600">
-                  Estudiantes
+                <Link href={`/dashboard/vehicles/${r.id}`} className="text-sm text-slate-600 hover:text-indigo-600">
+                  Ver
                 </Link>
                 <Link href={`/dashboard/vehicles/${r.id}/edit`} className="text-sm text-slate-600 hover:text-indigo-600">
                   Editar
