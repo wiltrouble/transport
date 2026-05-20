@@ -96,8 +96,6 @@ export function mapUser(row: AppwriteRow): User {
     appwriteUserId: String(row.appwriteUserId ?? ""),
     role,
     status,
-    createdAt: String(row.createdAt ?? row.$createdAt ?? ""),
-    updatedAt: String(row.updatedAt ?? row.$updatedAt ?? ""),
   };
 }
 
@@ -190,7 +188,6 @@ export function mapNotification(row: AppwriteRow): AppNotification {
     message: String(row.message ?? ""),
     isRead: Boolean(row.isRead ?? false),
     sentAt: String(row.sentAt ?? row.$createdAt ?? new Date().toISOString()),
-    createdAt: String(row.createdAt ?? row.$createdAt ?? new Date().toISOString()),
   };
 }
 
@@ -202,8 +199,6 @@ export function mapPushToken(row: AppwriteRow): PushToken {
     platform: String(row.platform ?? "unknown"),
     deviceName: String(row.deviceName ?? ""),
     isActive: Boolean(row.isActive ?? true),
-    createdAt: String(row.createdAt ?? row.$createdAt ?? ""),
-    updatedAt: String(row.updatedAt ?? row.$updatedAt ?? ""),
   };
 }
 

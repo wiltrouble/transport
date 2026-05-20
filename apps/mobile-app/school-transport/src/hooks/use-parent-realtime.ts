@@ -1,65 +1,110 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { getClientSessionSecret } from "@/lib/appwrite";
 import { notificationService } from "@/services/notificationService";
 import { trackingService } from "@/services/trackingService";
 import { useAuthStore } from "@/store/auth-store";
 import { useParentNotificationsStore } from "@/store/parent-notifications-store";
 import { useParentTrackingStore } from "@/store/parent-tracking-store";
 
-/** Subscribes to Appwrite Realtime for parent GPS + notifications while mounted. */
-export function useParentRealtime(enableGps = true) {
-  const parent = useAuthStore((s) => s.parent);
-  const live = useParentTrackingStore((s) => s.live);
+function logRealtimeIssue(scope: string, error: unknown): void {
+  if (__DEV__) {
+    console.warn(`[realtime] ${scope}:`, error instanceof Error ? error.message : error);
+  }
+}
+
+/**
+ * Single Appwrite Realtime coordinator for the parent app.
+ *
+ * - Waits for hydration + session before subscribing (avoids auth-less WS loops).
+ * - Uses generation counters so Strict Mode / fast tab switches don't leave stale subs.
+ * - Call once from `(parent)/_layout` only — not from individual tab screens.
+ */
+export function useParentRealtime(enableGps = false) {
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const parentId = useAuthStore((s) => s.parent?.id);
+  const liveSessionId = useParentTrackingStore((s) => s.live?.session.id);
   const applyGpsPoint = useParentTrackingStore((s) => s.applyGpsPoint);
   const setGpsConnected = useParentTrackingStore((s) => s.setConnected);
   const mergeNotification = useParentNotificationsStore((s) => s.mergeNotification);
   const setNotifConnected = useParentNotificationsStore((s) => s.setConnected);
 
-  useEffect(() => {
-    if (!parent) return;
+  const notifGenRef = useRef(0);
+  const gpsGenRef = useRef(0);
 
-    let notifSub: { unsubscribe: () => Promise<void> } | null = null;
+  useEffect(() => {
+    if (!isHydrated || !parentId || !getClientSessionSecret()) {
+      setNotifConnected(false);
+      return;
+    }
+
+    const gen = ++notifGenRef.current;
+    let sub: { unsubscribe: () => Promise<void> } | null = null;
     let cancelled = false;
 
     void notificationService
-      .subscribeToNotifications(parent.id, (n) => {
+      .subscribeToNotifications(parentId, (n) => {
         mergeNotification(n);
         void useAuthStore.getState().refreshParentData();
       })
-      .then((sub) => {
-        if (cancelled) void sub.unsubscribe();
-        else {
-          notifSub = sub;
-          setNotifConnected(true);
+      .then((s) => {
+        if (cancelled || gen !== notifGenRef.current) {
+          void s.unsubscribe();
+          return;
         }
+        sub = s;
+        setNotifConnected(true);
       })
-      .catch(() => setNotifConnected(false));
+      .catch((err) => {
+        logRealtimeIssue("notifications subscribe", err);
+        setNotifConnected(false);
+      });
 
     return () => {
       cancelled = true;
-      void notifSub?.unsubscribe();
+      void sub?.unsubscribe();
+      setNotifConnected(false);
     };
-  }, [parent, mergeNotification, setNotifConnected]);
+  }, [isHydrated, parentId, mergeNotification, setNotifConnected]);
 
   useEffect(() => {
-    if (!parent || !enableGps || !live?.session.id) return;
+    if (!isHydrated || !parentId || !enableGps || !liveSessionId || !getClientSessionSecret()) {
+      setGpsConnected(false);
+      return;
+    }
 
-    let gpsSub: { unsubscribe: () => Promise<void> } | null = null;
+    const gen = ++gpsGenRef.current;
+    let sub: { unsubscribe: () => Promise<void> } | null = null;
     let cancelled = false;
 
     void trackingService
-      .subscribeToGpsUpdates(live.session.id, (point) => {
+      .subscribeToGpsUpdates(liveSessionId, (point) => {
         applyGpsPoint(point);
         setGpsConnected(true);
       })
-      .then((sub) => {
-        if (cancelled) void sub.unsubscribe();
-        else gpsSub = sub;
+      .then((s) => {
+        if (cancelled || gen !== gpsGenRef.current) {
+          void s.unsubscribe();
+          return;
+        }
+        sub = s;
+        setGpsConnected(true);
       })
-      .catch(() => setGpsConnected(false));
+      .catch((err) => {
+        logRealtimeIssue("gps subscribe", err);
+        setGpsConnected(false);
+      });
 
     return () => {
       cancelled = true;
-      void gpsSub?.unsubscribe();
+      void sub?.unsubscribe();
+      setGpsConnected(false);
     };
-  }, [parent, enableGps, live?.session.id, applyGpsPoint, setGpsConnected]);
+  }, [
+    isHydrated,
+    parentId,
+    enableGps,
+    liveSessionId,
+    applyGpsPoint,
+    setGpsConnected,
+  ]);
 }

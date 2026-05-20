@@ -1,4 +1,4 @@
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Tabs, useSegments } from "expo-router";
 import { Text } from "react-native";
 import { tabBarIcon } from "@/components/navigation/tab-bar-icon";
 import { useAuthStore } from "@/store/auth-store";
@@ -17,8 +17,11 @@ export default function ParentLayout() {
   const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
   const unreadCount = useParentNotificationsStore((s) => s.unreadCount);
+  const segments = useSegments();
+  const enableGpsRealtime = segments.includes("tracking");
 
-  useParentRealtime(false);
+  // One Realtime coordinator for the whole parent stack (avoids duplicate WebSockets).
+  useParentRealtime(enableGpsRealtime);
 
   if (!user) {
     return <Redirect href="/(auth)/login" />;

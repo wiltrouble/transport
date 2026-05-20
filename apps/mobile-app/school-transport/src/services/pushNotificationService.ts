@@ -91,7 +91,6 @@ export const pushNotificationService = {
     const { databaseId, pushTokensTableId } = getTablesConfig();
     const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "unknown";
     const deviceName = Device.modelName ?? Device.deviceName ?? "Unknown device";
-    const now = new Date().toISOString();
 
     try {
       const existing = await tablesDB.listRows({
@@ -109,7 +108,7 @@ export const pushNotificationService = {
           databaseId,
           tableId: pushTokensTableId,
           rowId: existing.rows[0].$id,
-          data: { isActive: true, updatedAt: now, deviceName, platform },
+          data: { isActive: true, deviceName, platform },
         });
         return mapPushToken(row as AppwriteRow);
       }
@@ -127,7 +126,6 @@ export const pushNotificationService = {
         platform,
         deviceName,
         isActive: true,
-        updatedAt: now,
       },
     });
 
@@ -164,7 +162,7 @@ export const pushNotificationService = {
           databaseId,
           tableId: pushTokensTableId,
           rowId: row.$id,
-          data: { isActive: false, updatedAt: new Date().toISOString() },
+          data: { isActive: false },
         }),
       ),
     );

@@ -1,8 +1,9 @@
-import { Account, Client, TablesDB } from "appwrite";
+import { Account, Client, Realtime, TablesDB } from "appwrite";
 
 const SESSION_KEY = "appwrite_session_secret";
 
 let client: Client | null = null;
+let realtime: Realtime | null = null;
 let activeSessionSecret: string | null = null;
 
 export function getAppwriteConfig() {
@@ -32,6 +33,24 @@ export function getTablesDB(): TablesDB {
   return new TablesDB(getAppwriteClient());
 }
 
+/** Single Realtime instance per Appwrite client (avoids duplicate WebSocket connections). */
+export function getRealtime(): Realtime {
+  if (!realtime) {
+    realtime = new Realtime(getAppwriteClient());
+  }
+  return realtime;
+}
+
+export async function disconnectRealtime(): Promise<void> {
+  if (!realtime) return;
+  try {
+    await realtime.disconnect();
+  } catch {
+    // ignore
+  }
+  realtime = null;
+}
+
 export function setClientSession(secret: string): void {
   const trimmed = secret.trim();
   activeSessionSecret = trimmed || null;
@@ -41,6 +60,7 @@ export function setClientSession(secret: string): void {
 export function clearClientSession(): void {
   activeSessionSecret = null;
   getAppwriteClient().setSession("");
+  void disconnectRealtime();
 }
 
 export function getClientSessionSecret(): string | null {

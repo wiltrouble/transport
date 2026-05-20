@@ -16,5 +16,4 @@ export type AppNotification = {
   message: string;
   isRead: boolean;
   sentAt: string;
-  createdAt: string;
 };

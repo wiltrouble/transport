@@ -29,8 +29,6 @@ export type User = {
   appwriteUserId: string;
   role: UserRole;
   status: UserStatus;
-  createdAt: string;
-  updatedAt: string;
 };
 
 export type UserInput = {

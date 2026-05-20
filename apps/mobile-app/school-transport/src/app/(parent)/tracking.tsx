@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { useParentRealtime } from "@/hooks/use-parent-realtime";
 import { useAuthStore } from "@/store/auth-store";
 import { useParentStore } from "@/store/parent-store";
 import { useParentTrackingStore } from "@/store/parent-tracking-store";
@@ -18,8 +17,6 @@ export default function ParentTrackingScreen() {
   const error = useParentTrackingStore((s) => s.error);
   const loadTracking = useParentTrackingStore((s) => s.loadTracking);
   const selectedStudentId = useParentTrackingStore((s) => s.selectedStudentId);
-
-  useParentRealtime(true);
 
   const activeChild = childrenOverviews.find((c) => c.transportStatus === "active");
   const studentId = selectedStudentId ?? activeChild?.student.id;

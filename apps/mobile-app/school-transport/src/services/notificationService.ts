@@ -1,7 +1,7 @@
 import { ID, Query } from "appwrite";
 import { AppwriteException } from "appwrite";
-import { Channel, Realtime, type RealtimeResponseEvent } from "appwrite";
-import { getAppwriteClient, getTablesDB } from "@/lib/appwrite";
+import { Channel, type RealtimeResponseEvent } from "appwrite";
+import { getRealtime, getTablesDB } from "@/lib/appwrite";
 import { authService } from "@/services/authService";
 import { mapNotification } from "@/lib/mappers";
 import type { AppwriteRow } from "@/lib/row-utils";
@@ -55,7 +55,6 @@ async function createNotificationClient(
     message: input.message,
     isRead: false,
     sentAt: now,
-    createdAt: now,
   };
 
   let data = { ...base };
@@ -286,8 +285,7 @@ export const notificationService = {
     onNotification: (notification: AppNotification) => void,
   ) {
     const { databaseId, notificationsTableId } = getTablesConfig();
-    const client = getAppwriteClient();
-    const realtime = new Realtime(client);
+    const realtime = getRealtime();
     const channel = Channel.tablesdb(databaseId).table(notificationsTableId).row();
 
     const subscription = await realtime.subscribe(

@@ -74,7 +74,6 @@ async function createNotificationRow(
     message: input.message,
     isRead: false,
     sentAt: now,
-    createdAt: now,
   };
 
   let data = { ...base };

@@ -1,6 +1,6 @@
 import { Query } from "appwrite";
-import { Channel, Realtime, type RealtimeResponseEvent } from "appwrite";
-import { getAppwriteClient, getTablesDB } from "@/lib/appwrite";
+import { Channel, type RealtimeResponseEvent } from "appwrite";
+import { getRealtime, getTablesDB } from "@/lib/appwrite";
 import { mapGpsTracking } from "@/lib/mappers";
 import type { AppwriteRow } from "@/lib/row-utils";
 import { isQuerySyntaxError, isSchemaAttributeError } from "@/lib/row-utils";
@@ -108,8 +108,7 @@ export const trackingService = {
     onPoint: (point: GpsTrackingPoint) => void,
   ) {
     const { databaseId, gpsTrackingTableId } = getTablesConfig();
-    const client = getAppwriteClient();
-    const realtime = new Realtime(client);
+    const realtime = getRealtime();
     const channel = Channel.tablesdb(databaseId).table(gpsTrackingTableId).row();
 
     const subscription = await realtime.subscribe(

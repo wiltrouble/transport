@@ -7,6 +7,4 @@ export type PushToken = {
   platform: PushTokenPlatform | string;
   deviceName: string;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 };

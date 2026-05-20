@@ -82,8 +82,6 @@ export function mapUser(row: AppwriteRow): User {
     appwriteUserId: String(row.appwriteUserId ?? ""),
     role,
     status,
-    createdAt: String(row.createdAt ?? row.$createdAt ?? ""),
-    updatedAt: String(row.updatedAt ?? row.$updatedAt ?? ""),
   };
 }
 

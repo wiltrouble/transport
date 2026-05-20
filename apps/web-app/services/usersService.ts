@@ -116,13 +116,10 @@ export const usersService = {
       throw new Error(`Rol no válido: ${String(input.role)}`);
     }
     const { databaseId, usersTableId } = getTablesConfig();
-    const now = new Date().toISOString();
     const data = {
       appwriteUserId: input.appwriteUserId,
       role: input.role,
       status: input.status ?? "active",
-      createdAt: now,
-      updatedAt: now,
     };
     if (options.client === "session") {
       const tablesDB = await getServerTablesDB();
@@ -156,7 +153,6 @@ export const usersService = {
     const data = {
       ...(patch.role !== undefined ? { role: patch.role } : {}),
       ...(patch.status !== undefined ? { status: patch.status } : {}),
-      updatedAt: new Date().toISOString(),
     };
     if (options.client === "session") {
       const tablesDB = await getServerTablesDB();
