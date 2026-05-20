@@ -1,6 +1,7 @@
 import { Query } from "appwrite";
 import { NextResponse } from "next/server";
 import { getServerTablesDB } from "@/lib/appwrite-session";
+import { AuthorizationError, assertAdminApiCaller } from "@/lib/authorization";
 import {
   PARENT_STUDENT_PARENT_COL,
   PARENT_STUDENT_STUDENT_COL,
@@ -10,9 +11,10 @@ import {
 import type { AppwriteRow } from "@/lib/row-utils";
 import { getTablesConfig } from "@/lib/tables-config";
 
-/** GET /api/dev/parent-student-schema — inspect junction row shape (requires login). */
+/** GET /api/dev/parent-student-schema — admin-only schema inspection helper. */
 export async function GET() {
   try {
+    await assertAdminApiCaller();
     const tablesDB = await getServerTablesDB();
     const { databaseId, parentStudentsTableId } = getTablesConfig();
 
@@ -38,6 +40,12 @@ export async function GET() {
       sampleStudentRowId: sample ? readStudentIdFromRow(sample) : null,
     });
   } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.code === "no-session" ? 401 : 403 },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to inspect schema" },
       { status: 500 },

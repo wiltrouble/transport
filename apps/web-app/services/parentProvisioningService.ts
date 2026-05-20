@@ -16,6 +16,7 @@ export const parentProvisioningService = {
     const { record, credentials } = await provisionWithAuthUser({
       email,
       fullName: values.fullName,
+      role: "parent",
       assertBusinessEmailAvailable: async () => {
         if (await parentService.emailExists(email)) {
           throw new Error("Ya existe un padre/madre registrado con este correo electrónico.");

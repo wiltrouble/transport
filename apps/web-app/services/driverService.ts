@@ -74,6 +74,23 @@ export const driverService = {
     }
   },
 
+  async getByAppwriteUserId(appwriteUserId: string): Promise<Driver | null> {
+    if (!appwriteUserId) return null;
+    const tablesDB = await getServerTablesDB();
+    const { databaseId, driversTableId } = getTablesConfig();
+    try {
+      const result = await tablesDB.listRows({
+        databaseId,
+        tableId: driversTableId,
+        queries: [Query.equal("appwriteUserId", appwriteUserId), Query.limit(1)],
+      });
+      if (result.rows.length === 0) return null;
+      return mapDriver(result.rows[0] as AppwriteRow);
+    } catch {
+      return null;
+    }
+  },
+
   async emailExists(email: string, excludeDriverId?: string): Promise<boolean> {
     const normalized = email.trim().toLowerCase();
     const tablesDB = await getServerTablesDB();

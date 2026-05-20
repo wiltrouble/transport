@@ -74,6 +74,23 @@ export const parentService = {
     }
   },
 
+  async getByAppwriteUserId(appwriteUserId: string): Promise<Parent | null> {
+    if (!appwriteUserId) return null;
+    const tablesDB = await getServerTablesDB();
+    const { databaseId, parentsTableId } = getTablesConfig();
+    try {
+      const result = await tablesDB.listRows({
+        databaseId,
+        tableId: parentsTableId,
+        queries: [Query.equal("appwriteUserId", appwriteUserId), Query.limit(1)],
+      });
+      if (result.rows.length === 0) return null;
+      return mapParent(result.rows[0] as AppwriteRow);
+    } catch {
+      return null;
+    }
+  },
+
   async getByIdWithStudents(id: string): Promise<ParentWithStudents | null> {
     const parent = await this.getById(id);
     if (!parent) return null;

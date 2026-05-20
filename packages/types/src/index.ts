@@ -9,6 +9,7 @@ export * from "./session-status";
 export * from "./session-student";
 export * from "./student";
 export * from "./transport-session";
+export * from "./user";
 export * from "./vehicle";
 export * from "./vehicle-driver";
 export * from "./vehicle-student";

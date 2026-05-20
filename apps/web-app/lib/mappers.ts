@@ -3,6 +3,8 @@ import { mapStatus } from "@school/utils";
 import type { Driver } from "@school/types";
 import type { Parent } from "@school/types";
 import type { Student } from "@school/types";
+import type { User, UserRole, UserStatus } from "@school/types";
+import { isUserRole } from "@school/types";
 import type { GpsTrackingPoint, Vehicle } from "@school/types";
 import {
   readDriverIdFromGpsRow,
@@ -67,6 +69,21 @@ export function mapGpsTracking(row: AppwriteRow): GpsTrackingPoint {
     heading: Number(row.heading ?? 0),
     accuracy: Number(row.accuracy ?? 0),
     trackedAt: String(row.trackedAt ?? row.$createdAt ?? new Date().toISOString()),
+  };
+}
+
+export function mapUser(row: AppwriteRow): User {
+  const roleValue = String(row.role ?? "").toLowerCase();
+  const role: UserRole = isUserRole(roleValue) ? roleValue : "parent";
+  const statusValue = String(row.status ?? "").toLowerCase();
+  const status: UserStatus = statusValue === "inactive" ? "inactive" : "active";
+  return {
+    id: row.$id,
+    appwriteUserId: String(row.appwriteUserId ?? ""),
+    role,
+    status,
+    createdAt: String(row.createdAt ?? row.$createdAt ?? ""),
+    updatedAt: String(row.updatedAt ?? row.$updatedAt ?? ""),
   };
 }
 

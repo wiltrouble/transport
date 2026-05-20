@@ -6,11 +6,13 @@ import {
 } from "@/lib/appwrite";
 import {
   APPWRITE_FALLBACK_COOKIE,
+  APPWRITE_ROLE_COOKIE,
   APPWRITE_SESSION_COOKIE,
 } from "@/lib/auth-config";
 
 /**
- * Deletes the current Appwrite session and clears the mirrored session cookie(s).
+ * Deletes the current Appwrite session and clears the mirrored session cookie(s),
+ * including the role cookie used by middleware.
  */
 export async function POST() {
   const cookieStore = await cookies();
@@ -35,6 +37,7 @@ export async function POST() {
 
   cookieStore.delete(APPWRITE_SESSION_COOKIE);
   cookieStore.delete(APPWRITE_FALLBACK_COOKIE);
+  cookieStore.delete(APPWRITE_ROLE_COOKIE);
 
   return NextResponse.json({ ok: true });
 }

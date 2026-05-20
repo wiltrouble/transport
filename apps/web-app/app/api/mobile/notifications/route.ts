@@ -6,6 +6,7 @@ import { mapDriver } from "@/lib/mappers";
 import { type AppwriteRow } from "@/lib/row-utils";
 import { getTablesConfig } from "@/lib/tables-config";
 import { adminNotificationService } from "@/services/notificationService";
+import { usersService } from "@/services/usersService";
 import type { NotificationType } from "@school/types";
 
 const bodySchema = z.object({
@@ -90,6 +91,20 @@ async function verifyDriverAuth(sessionSecret: string | null, jwt: string | null
   }
   const account = new Account(client);
   const user = await account.get();
+
+  // Authoritative role check: the user MUST have role=driver in the users table
+  // (when present). The drivers-row check below remains as a business guard.
+  try {
+    const usersRow = await usersService.getByAppwriteUserId(user.$id, {
+      client: "admin",
+    });
+    if (usersRow && (usersRow.role !== "driver" || usersRow.status !== "active")) {
+      return null;
+    }
+  } catch {
+    // Users table unavailable — fall through to legacy driver-row check.
+  }
+
   return getActiveDriverByAppwriteUserId(user.$id);
 }
 

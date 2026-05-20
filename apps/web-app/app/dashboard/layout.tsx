@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getAuthenticatedUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/authorization";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
@@ -9,8 +8,9 @@ import { AuthLoading } from "@/components/auth/auth-loading";
 export const dynamic = "force-dynamic";
 
 async function DashboardAuth({ children }: { children: React.ReactNode }) {
-  const user = await getAuthenticatedUser();
-  if (!user) redirect("/login");
+  // Server-side, request-time authorization check — runs on every dashboard
+  // render. Redirects to /login (no session) or /unauthorized (wrong role).
+  await requireAdmin();
   return <>{children}</>;
 }
 

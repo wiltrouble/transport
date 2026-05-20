@@ -143,7 +143,18 @@ export function LoginForm() {
       });
 
       if (!sync.ok) {
-        const body = (await sync.json().catch(() => null)) as { error?: string } | null;
+        const body = (await sync.json().catch(() => null)) as {
+          error?: string;
+          code?: string;
+        } | null;
+
+        // When the server rejected us for not being an admin, the API has
+        // already revoked the Appwrite session — make sure the browser SDK
+        // mirrors that so a subsequent attempt does not say "session active".
+        if (sync.status === 403 || body?.code === "FORBIDDEN_ROLE") {
+          await clearBrowserAppwriteSession().catch(() => undefined);
+        }
+
         setError(body?.error || "No se pudo guardar la sesión en el servidor.");
         setLoading(false);
         return;

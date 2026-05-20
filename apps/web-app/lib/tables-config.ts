@@ -21,6 +21,8 @@ export function getTablesConfig() {
   const gpsTrackingTableId = process.env.NEXT_PUBLIC_APPWRITE_GPS_TRACKING_TABLE;
   const notificationsTableId =
     process.env.NEXT_PUBLIC_APPWRITE_NOTIFICATIONS_TABLE?.trim() || "notifications";
+  const usersTableId =
+    process.env.NEXT_PUBLIC_APPWRITE_USERS_TABLE?.trim() || "users";
 
   if (
     !databaseId ||
@@ -53,6 +55,7 @@ export function getTablesConfig() {
     sessionStudentsTableId,
     gpsTrackingTableId,
     notificationsTableId,
+    usersTableId,
     storageBucketId: storageBucketId ?? "",
   };
 }

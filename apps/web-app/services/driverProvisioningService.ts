@@ -16,6 +16,7 @@ export const driverProvisioningService = {
     const { record, credentials } = await provisionWithAuthUser({
       email,
       fullName: values.fullName,
+      role: "driver",
       assertBusinessEmailAvailable: async () => {
         if (await driverService.emailExists(email)) {
           throw new Error("Ya existe un conductor con este correo electrónico.");
