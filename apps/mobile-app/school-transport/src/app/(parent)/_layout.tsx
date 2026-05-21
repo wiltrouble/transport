@@ -17,7 +17,7 @@ export default function ParentLayout() {
   const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
   const unreadCount = useParentNotificationsStore((s) => s.unreadCount);
-  const segments = useSegments();
+  const segments = useSegments() as string[];
   const enableGpsRealtime = segments.includes("tracking");
 
   // One Realtime coordinator for the whole parent stack (avoids duplicate WebSockets).

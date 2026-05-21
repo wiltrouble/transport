@@ -34,6 +34,10 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(driver)" />
           <Stack.Screen name="(parent)" />
+          <Stack.Screen
+            name="(shared)"
+            options={{ presentation: "modal", animation: "slide_from_bottom" }}
+          />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

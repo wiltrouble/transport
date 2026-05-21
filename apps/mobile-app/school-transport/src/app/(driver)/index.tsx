@@ -137,6 +137,18 @@ export default function DriverDashboardScreen() {
             />
           </View>
         </View>
+
+        <Card>
+          <Text className="mb-2 text-sm font-medium text-slate-500">Seguridad</Text>
+          <Text className="mb-3 text-sm text-slate-600">
+            Actualice la contraseña temporal recibida por su administrador.
+          </Text>
+          <Button
+            label="Cambiar contraseña"
+            variant="secondary"
+            onPress={() => router.push({ pathname: "/(shared)/change-password" })}
+          />
+        </Card>
       </ScrollView>
     </View>
   );
