@@ -54,9 +54,11 @@ export default function ChangePasswordScreen() {
   }, [reset]);
 
   const onSubmit = handleSubmit(async (values) => {
+    // Defensive trim — temporary passwords are often pasted in and pick up
+    // surrounding whitespace, which Appwrite rejects as wrong-credentials.
     const ok = await submit({
-      currentPassword: values.currentPassword,
-      newPassword: values.newPassword,
+      currentPassword: values.currentPassword.trim(),
+      newPassword: values.newPassword.trim(),
     });
     if (ok) {
       resetForm(DEFAULT_VALUES);

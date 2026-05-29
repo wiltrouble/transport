@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-na
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { loginSchema, type LoginFormValues } from "@/validations/login";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -26,7 +27,12 @@ export default function LoginScreen() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const role = await login(values.email, values.password);
+      // Defensive trim: when admins paste a temporary password from the web
+      // dashboard they often capture leading/trailing whitespace, which
+      // Appwrite Auth rejects as `user_invalid_credentials`.
+      const email = values.email.trim().toLowerCase();
+      const password = values.password.trim();
+      const role = await login(email, password);
       if (role === "driver") {
         router.replace("/(driver)");
       } else if (role === "parent") {
@@ -65,7 +71,10 @@ export default function LoginScreen() {
               <Input
                 label="Correo electrónico"
                 autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
                 keyboardType="email-address"
+                textContentType="emailAddress"
                 autoComplete="email"
                 value={value}
                 onBlur={onBlur}
@@ -79,14 +88,15 @@ export default function LoginScreen() {
             control={control}
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
-              <Input
+              <PasswordInput
                 label="Contraseña"
-                secureTextEntry
-                autoComplete="password"
                 value={value}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 error={errors.password?.message}
+                returnKeyType="done"
+                onSubmitEditing={onSubmit}
+                editable={!isLoading}
               />
             )}
           />

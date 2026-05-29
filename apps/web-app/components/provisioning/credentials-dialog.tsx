@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, Copy, Smartphone } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, Eye, EyeOff, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { ProvisioningCredentials } from "@/lib/provisioning/types";
@@ -44,6 +44,23 @@ type ProvisioningCredentialsDialogProps = {
   extraAction?: { label: string; onClick: () => void };
 };
 
+type CopyField = "email" | "password" | "all";
+
+/**
+ * Copies the raw value of a field to the clipboard. We never embed labels or
+ * separators here so the admin cannot accidentally paste leading/trailing
+ * whitespace into the mobile login (a frequent cause of "invalid credentials"
+ * errors right after provisioning).
+ */
+async function writeToClipboard(value: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function ProvisioningCredentialsDialog({
   open,
   credentials,
@@ -53,28 +70,32 @@ export function ProvisioningCredentialsDialog({
   onCreateAnother,
   extraAction,
 }: ProvisioningCredentialsDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<CopyField | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const copy = roleCopy[role];
+
+  useEffect(() => {
+    if (!open) {
+      setPasswordVisible(false);
+      setCopiedField(null);
+    }
+  }, [open]);
 
   if (!open || !credentials) return null;
 
-  const lines = [
-    `Correo: ${credentials.email}`,
-    `Contraseña temporal: ${credentials.temporaryPassword}`,
-    "",
-    `App móvil — ${copy.subject}`,
-  ];
-
-  async function copyCredentials() {
-    try {
-      await navigator.clipboard.writeText(lines.join("\n"));
-      setCopied(true);
-      toast.success("Credenciales copiadas al portapapeles");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
+  async function handleCopy(field: CopyField, value: string, label: string) {
+    const ok = await writeToClipboard(value);
+    if (!ok) {
       toast.error("No se pudo copiar. Copie los datos manualmente.");
+      return;
     }
+    setCopiedField(field);
+    toast.success(`${label} copiado al portapapeles`);
+    window.setTimeout(() => setCopiedField((current) => (current === field ? null : current)), 2000);
   }
+
+  const allCredentials = `Correo: ${credentials.email}\nContraseña temporal: ${credentials.temporaryPassword}`;
+  const maskedPassword = "•".repeat(Math.min(credentials.temporaryPassword.length, 24));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -110,14 +131,88 @@ export function ProvisioningCredentialsDialog({
           <p className="text-xs font-medium uppercase tracking-wide text-amber-900">
             Credenciales temporales (solo se muestran una vez)
           </p>
+
           <div>
             <p className="text-xs text-amber-800">Correo</p>
-            <p className="font-mono text-sm font-semibold text-slate-900">{credentials.email}</p>
+            <div className="mt-1 flex items-center gap-2">
+              <p className="flex-1 truncate font-mono text-sm font-semibold text-slate-900">
+                {credentials.email}
+              </p>
+              <button
+                type="button"
+                onClick={() => handleCopy("email", credentials.email, "Correo")}
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-amber-500"
+                aria-label="Copiar correo"
+              >
+                {copiedField === "email" ? (
+                  <>
+                    <Check className="size-3.5" aria-hidden />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" aria-hidden />
+                    Copiar
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+
           <div>
-            <p className="text-xs text-amber-800">Contraseña temporal</p>
-            <p className="break-all font-mono text-sm font-semibold text-slate-900">
-              {credentials.temporaryPassword}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-amber-800">Contraseña temporal</p>
+              <button
+                type="button"
+                onClick={() => setPasswordVisible((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-xs font-medium text-amber-900 hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-amber-500"
+                aria-pressed={passwordVisible}
+              >
+                {passwordVisible ? (
+                  <>
+                    <EyeOff className="size-3.5" aria-hidden />
+                    Ocultar
+                  </>
+                ) : (
+                  <>
+                    <Eye className="size-3.5" aria-hidden />
+                    Mostrar
+                  </>
+                )}
+              </button>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <p
+                className={`flex-1 break-all font-mono text-sm font-semibold text-slate-900 ${
+                  passwordVisible ? "" : "select-none tracking-widest"
+                }`}
+              >
+                {passwordVisible ? credentials.temporaryPassword : maskedPassword}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  handleCopy("password", credentials.temporaryPassword, "Contraseña")
+                }
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-amber-100 focus-visible:outline-2 focus-visible:outline-amber-500"
+                aria-label="Copiar contraseña"
+              >
+                {copiedField === "password" ? (
+                  <>
+                    <Check className="size-3.5" aria-hidden />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" aria-hidden />
+                    Copiar
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-[11px] text-amber-800">
+              Use el botón &quot;Copiar&quot; — copiar manualmente puede agregar espacios
+              invisibles que harán fallar el inicio de sesión.
             </p>
           </div>
         </div>
@@ -135,8 +230,12 @@ export function ProvisioningCredentialsDialog({
         </p>
 
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Button type="button" variant="secondary" onClick={copyCredentials}>
-            {copied ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => handleCopy("all", allCredentials, "Credenciales")}
+          >
+            {copiedField === "all" ? (
               <>
                 <Check className="size-4" aria-hidden />
                 Copiado
@@ -144,7 +243,7 @@ export function ProvisioningCredentialsDialog({
             ) : (
               <>
                 <Copy className="size-4" aria-hidden />
-                Copiar credenciales
+                Copiar ambas
               </>
             )}
           </Button>
